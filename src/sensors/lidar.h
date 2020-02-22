@@ -8,7 +8,7 @@ const double pi = 3.1415;
 
 struct Ray
 {
-	
+
 	Vect3 origin;
 	double resolution;
 	Vect3 direction;
@@ -18,9 +18,9 @@ struct Ray
 	// parameters:
 	// setOrigin: the starting position from where the ray is cast
 	// horizontalAngle: the angle of direction the ray travels on the xy plane
-	// verticalAngle: the angle of direction between xy plane and ray 
-	// 				  for example 0 radians is along xy plane and pi/2 radians is stright up
-	// resoultion: the magnitude of the ray's step, used for ray casting, the smaller the more accurate but the more expensive
+	// verticalAngle: the angle of direction between xy plane and ray
+	// 				  for example 0 radians is along xy plane and pi/2 radians is straight up
+	// resolution: the magnitude of the ray's step, used for ray casting, the smaller the more accurate but the more expensive
 
 	Ray(Vect3 setOrigin, double horizontalAngle, double verticalAngle, double setResolution)
 		: origin(setOrigin), resolution(setResolution), direction(resolution*cos(verticalAngle)*cos(horizontalAngle), resolution*cos(verticalAngle)*sin(horizontalAngle),resolution*sin(verticalAngle)),
@@ -64,7 +64,7 @@ struct Ray
 			double rz = ((double) rand() / (RAND_MAX));
 			cloud->points.push_back(pcl::PointXYZ(castPosition.x+rx*sderr, castPosition.y+ry*sderr, castPosition.z+rz*sderr));
 		}
-			
+
 	}
 
 };
@@ -79,28 +79,28 @@ struct Lidar
 	double groundSlope;
 	double minDistance;
 	double maxDistance;
-	double resoultion;
+	double resolution;
 	double sderr;
 
 	Lidar(std::vector<Car> setCars, double setGroundSlope)
 		: cloud(new pcl::PointCloud<pcl::PointXYZ>()), position(0,0,2.6)
 	{
 		// TODO:: set minDistance to 5 to remove points from roof of ego car
-		minDistance = 0;
+		minDistance = 5;
 		maxDistance = 50;
-		resoultion = 0.2;
+		resolution = 0.2;
 		// TODO:: set sderr to 0.2 to get more interesting pcd files
-		sderr = 0.0;
+		sderr = 0.2;
 		cars = setCars;
 		groundSlope = setGroundSlope;
 
-		// TODO:: increase number of layers to 8 to get higher resoultion pcd
-		int numLayers = 3;
+		// TODO:: increase number of layers to 8 to get higher resolution pcd
+		int numLayers = 8;
 		// the steepest vertical angle
 		double steepestAngle =  30.0*(-pi/180);
 		double angleRange = 26.0*(pi/180);
-		// TODO:: set to pi/64 to get higher resoultion pcd
-		double horizontalAngleInc = pi/6;
+		// TODO:: set to pi/64 to get higher resolution pcd
+		double horizontalAngleInc = pi/64;
 
 		double angleIncrement = angleRange/numLayers;
 
@@ -108,7 +108,7 @@ struct Lidar
 		{
 			for(double angle = 0; angle <= 2*pi; angle+=horizontalAngleInc)
 			{
-				Ray ray(position,angle,angleVertical,resoultion);
+				Ray ray(position,angle,angleVertical,resolution);
 				rays.push_back(ray);
 			}
 		}
