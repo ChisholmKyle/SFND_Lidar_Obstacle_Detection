@@ -9,7 +9,7 @@ project(playback)
 
 find_package(PCL 1.2 REQUIRED)
 
-include_directories(${PCL_INCLUDE_DIRS})
+include_directories(${PCL_INCLUDE_DIRS} "${CMAKE_CURRENT_SOURCE_DIR}/src")
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 list(REMOVE_ITEM PCL_LIBRARIES "vtkproj4")
@@ -18,6 +18,5 @@ list(REMOVE_ITEM PCL_LIBRARIES "vtkproj4")
 add_executable (environment src/environment.cpp src/render/render.cpp src/processPointClouds.cpp)
 target_link_libraries (environment ${PCL_LIBRARIES})
 
-
-
-
+add_executable (ransac2d src/quiz/ransac/ransac2d.cpp src/render/render.cpp src/processPointClouds.cpp)
+target_link_libraries (ransac2d ${PCL_LIBRARIES})

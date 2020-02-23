@@ -169,3 +169,7 @@ std::vector<boost::filesystem::path> ProcessPointClouds<PointT>::streamPcd(std::
     return paths;
 
 }
+
+// instantiate expected types for ProcessPointClouds
+// https://stackoverflow.com/questions/8752837/undefined-reference-to-template-class-constructor
+template class ProcessPointClouds<pcl::PointXYZ>;

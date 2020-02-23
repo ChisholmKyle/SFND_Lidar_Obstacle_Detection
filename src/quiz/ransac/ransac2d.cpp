@@ -1,11 +1,10 @@
 /* \author Aaron Brown */
 // Quiz on implementing simple RANSAC line fitting
 
-#include "../../render/render.h"
 #include <unordered_set>
-#include "../../processPointClouds.h"
-// using templates for processPointClouds so also include .cpp to help linker
-#include "../../processPointClouds.cpp"
+
+#include "render/render.h"
+#include "processPointClouds.h"
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr CreateData()
 {
@@ -65,10 +64,10 @@ std::unordered_set<int> Ransac(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int ma
 {
 	std::unordered_set<int> inliersResult;
 	srand(time(NULL));
-	
+
 	// TODO: Fill in this function
 
-	// For max iterations 
+	// For max iterations
 
 	// Randomly sample subset and fit line
 
@@ -76,7 +75,7 @@ std::unordered_set<int> Ransac(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int ma
 	// If distance is smaller than threshold count it as inlier
 
 	// Return indicies of inliers from fitted line with most inliers
-	
+
 	return inliersResult;
 
 }
@@ -89,7 +88,7 @@ int main ()
 
 	// Create data
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = CreateData();
-	
+
 
 	// TODO: Change the max iteration and distance tolerance arguments for Ransac function
 	std::unordered_set<int> inliers = Ransac(cloud, 0, 0);
@@ -117,10 +116,10 @@ int main ()
   	{
   		renderPointCloud(viewer,cloud,"data");
   	}
-	
+
   	while (!viewer->wasStopped ())
   	{
   	  viewer->spinOnce ();
   	}
-  	
+
 }
