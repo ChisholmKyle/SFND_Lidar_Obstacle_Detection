@@ -89,7 +89,7 @@ static std::vector<double> GetPlaneCoefficients(const std::vector<pcl::PointXYZ>
 	return result;
 }
 
-std::unordered_set<int> Ransac3D(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int maxIterations, float distanceTol)
+std::unordered_set<int> RansacPlane(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int maxIterations, float distanceTol)
 {
 	std::unordered_set<int> inliersResult;
 	std::srand(std::time(NULL));
@@ -208,7 +208,7 @@ int main ()
 
 
 	// TODO: Change the max iteration and distance tolerance arguments for Ransac function
-	std::unordered_set<int> inliers = Ransac3D(cloud, 100, 0.25);
+	std::unordered_set<int> inliers = RansacPlane(cloud, 100, 0.25);
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr  cloudInliers(new pcl::PointCloud<pcl::PointXYZ>());
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloudOutliers(new pcl::PointCloud<pcl::PointXYZ>());
