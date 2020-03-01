@@ -21,3 +21,6 @@ target_link_libraries (environment ${PCL_LIBRARIES})
 add_executable (quizRansac src/quiz/ransac/ransac2d.cpp src/render/render.cpp src/processPointClouds.cpp)
 target_compile_definitions(quizRansac PRIVATE SFND_SENSOR_DATA_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/src/sensors/data")
 target_link_libraries (quizRansac ${PCL_LIBRARIES})
+
+add_executable (quizCluster src/quiz/cluster/cluster.cpp src/render/render.cpp)
+target_link_libraries (quizCluster ${PCL_LIBRARIES})
