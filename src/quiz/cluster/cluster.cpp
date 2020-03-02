@@ -1,6 +1,6 @@
 /* \author Aaron Brown */
 // Quiz on implementing simple RANSAC line fitting
-
+#include <unordered_set>
 #include "render/render.h"
 #include "render/box.h"
 #include <chrono>
@@ -70,18 +70,34 @@ void render2DTree(const std::unique_ptr<Node> &node, pcl::visualization::PCLVisu
 		render2DTree(node->left,viewer, lowerWindow, iteration, depth+1);
 		render2DTree(node->right,viewer, upperWindow, iteration, depth+1);
 
-
 	}
 
 }
 
-std::vector<std::vector<int>> euclideanCluster(const std::vector<std::vector<float>>& points, KdTree* tree, float distanceTol)
+void Proximity(const float distanceTol, const std::vector<std::vector<float>>& points, const int targetId, KdTree &tree, std::unordered_set<int> &processedPoints, std::vector<int> &cluster) {
+
+	processedPoints.insert(targetId);
+	cluster.push_back(targetId);
+	std::vector<int> nearbyPoints = tree.search(points[targetId], distanceTol);
+	for (const auto &id : nearbyPoints) {
+		if (!processedPoints.count(id))
+			Proximity(distanceTol, points, id, tree, processedPoints, cluster);
+	}
+}
+
+std::vector<std::vector<int>> euclideanCluster(const std::vector<std::vector<float>>& points, KdTree &tree, float distanceTol)
 {
 
 	// TODO: Fill out this function to return list of indices for each cluster
-
+	std::unordered_set<int> processedPoints;
 	std::vector<std::vector<int>> clusters;
-
+	for (int id = 0; id < points.size(); ++id) {
+		if (!processedPoints.count(id)) {
+			std::vector<int> cluster;
+			Proximity(distanceTol, points, id, tree, processedPoints, cluster);
+			clusters.push_back(cluster);
+		}
+	}
 	return clusters;
 
 }
@@ -104,16 +120,16 @@ int main ()
 	//std::vector<std::vector<float>> points = { {-6.2,7}, {-6.3,8.4}, {-5.2,7.1}, {-5.7,6.3} };
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = CreateData(points);
 
-	KdTree* tree = new KdTree;
+	KdTree tree;
 
     for (int i=0; i<points.size(); i++)
-    	tree->insert(points[i],i);
+    	tree.insert(points[i],i);
 
   	int it = 0;
-  	render2DTree(tree->root,viewer,window, it);
+  	render2DTree(tree.root,viewer,window, it);
 
   	std::cout << "Test Search" << std::endl;
-  	std::vector<int> nearby = tree->search({-6,7},3.0);
+  	std::vector<int> nearby = tree.search({-6,7},3.0);
   	for(int index : nearby)
       std::cout << index << ",";
   	std::cout << std::endl;
