@@ -69,15 +69,60 @@ struct KdTree
 
 	}
 
+	void searchHelper(const std::vector<float> &target, const float distanceTol, std::unique_ptr<Node> &node, const int depth, std::vector<int> &ids) {
+		if (node != nullptr) {
+			const int dim = depth % target.size();
+			if (target[dim] + distanceTol < node->point[dim]) {
+				// not in box, recurse into left only
+				searchHelper(target, distanceTol, node->left, depth + 1, ids);
+			} else if (target[dim] - distanceTol > node->point[dim]) {
+				// not in box, recurse into right only
+				searchHelper(target, distanceTol, node->right, depth + 1, ids);
+			} else {
+				// target is in this dimension's box range
+				// check remaining dimensions and radius
+				bool inside_box = true;
+				double sumsqr = std::pow(target[dim] - node->point[dim], 2.0);
+				for (int k = 1; k < target.size(); ++k) {
+					const int test_dim = (dim + k) % target.size();
+					if ((target[test_dim] + distanceTol < node->point[test_dim]) ||
+					    (target[test_dim] - distanceTol > node->point[test_dim])) {
+						inside_box = false;
+						break;
+					} else {
+						sumsqr += std::pow(target[test_dim] - node->point[test_dim], 2.0);
+					}
+				}
+				if (inside_box && std::sqrt(sumsqr) <= distanceTol) {
+					ids.push_back(node->id);
+				}
+				// recurse into both sides
+				searchHelper(target, distanceTol, node->left, depth + 1, ids);
+				searchHelper(target, distanceTol, node->right, depth + 1, ids);
+			}
+
+		}
+	}
+
 	// return a list of point ids in the tree that are within distance of target
-	std::vector<int> search(std::vector<float> target, float distanceTol)
+	std::vector<int> search(const std::vector<float> &target, float distanceTol)
 	{
 		std::vector<int> ids;
+		if (root == nullptr)
+		{
+			PCL_ERROR ("KdTree has no points \n");
+		}
+		else
+		{
+			// check dimension of point
+			if (target.size() != root->point.size()) {
+				PCL_ERROR ("Wrong point size for KdTree \n");
+			}
+			// traverse tree
+			searchHelper(target, distanceTol, root, 0, ids);
+		}
+
 		return ids;
 	}
 
 };
-
-
-
-
