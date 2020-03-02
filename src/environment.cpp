@@ -64,7 +64,7 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr& viewer)
     {
         std::cout << "cluster size ";
         pointProcessor->numPoints(cluster);
-        renderPointCloud(viewer,cluster,"obstCloud"+std::to_string(clusterId),colors[clusterId]);
+        renderPointCloud(viewer,cluster,"obstCloud"+std::to_string(clusterId),colors[clusterId % colors.size()]);
         Box box = pointProcessor->BoundingBox(cluster);
         renderBox(viewer,box,clusterId, colors[clusterId]);
         ++clusterId;
@@ -77,13 +77,39 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr& viewer)
 
 void cityBlock(pcl::visualization::PCLVisualizer::Ptr& viewer)
 {
-  // ----------------------------------------------------
-  // -----Open 3D viewer and display City Block     -----
-  // ----------------------------------------------------
+    // ----------------------------------------------------
+    // -----Open 3D viewer and display City Block     -----
+    // ----------------------------------------------------
+    const float voxelResolution = 0.2;
+    const Eigen::Vector4f boundMin(-10.0, -6.0, -2.0, 1);
+    const Eigen::Vector4f boundMax(30.0, 6.0, 0.0, 1);
 
-  ProcessPointClouds<pcl::PointXYZI> pointProcessorI;
-  pcl::PointCloud<pcl::PointXYZI>::Ptr inputCloud = pointProcessorI.loadPcd(std::string(SFND_SENSOR_DATA_ROOT) + "/pcd/data_1/0000000000.pcd");
-  renderPointCloud(viewer,inputCloud,"inputCloud");
+    ProcessPointClouds<pcl::PointXYZI> pointProcessorI;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr inputCloud = pointProcessorI.loadPcd(std::string(SFND_SENSOR_DATA_ROOT) + "/pcd/data_1/0000000000.pcd");
+
+    // Experiment with the ? values and find what works best
+    pcl::PointCloud<pcl::PointXYZI>::Ptr filterCloud = pointProcessorI.FilterCloud(inputCloud, voxelResolution, boundMin, boundMax);
+
+    std::pair<pcl::PointCloud<pcl::PointXYZI>::Ptr, pcl::PointCloud<pcl::PointXYZI>::Ptr> segmentCloud = pointProcessorI.SegmentPlanePcl(filterCloud, 600, 0.25);
+    std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cloudClusters = pointProcessorI.Clustering(segmentCloud.first, 0.35, 20, 500);
+
+    // renderPointCloud(viewer,inputCloud,"inputCloud");
+    // renderPointCloud(viewer,filterCloud,"filterCloud");
+    renderPointCloud(viewer,segmentCloud.second,"groundPlane", Color(1,1,1));
+    // renderPointCloud(viewer,segmentCloud.first,"obstaclesCloud");
+
+    int clusterId = 0;
+    std::vector<Color> colors = {Color(1,0,0), Color(0,1,0), Color(0,0,1), Color(0.5,0.5,0),Color(0,0.5,0.5), Color(0.5,0.0,0.5)};
+    for(pcl::PointCloud<pcl::PointXYZI>::Ptr cluster : cloudClusters)
+    {
+        std::cout << "cluster size ";
+        pointProcessorI.numPoints(cluster);
+        renderPointCloud(viewer,cluster,"obstCloud"+std::to_string(clusterId),colors[clusterId % colors.size()]);
+        Box box = pointProcessorI.BoundingBox(cluster);
+        renderBox(viewer,box,clusterId, colors[clusterId % colors.size()]);
+        ++clusterId;
+    }
+
 }
 
 //setAngle: SWITCH CAMERA ANGLE {XY, TopDown, Side, FPS}
