@@ -16,6 +16,7 @@ list(REMOVE_ITEM PCL_LIBRARIES "vtkproj4")
 
 
 add_executable (environment src/environment.cpp src/render/render.cpp src/processPointClouds.cpp)
+target_compile_definitions(environment PRIVATE SFND_SENSOR_DATA_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/src/sensors/data")
 target_link_libraries (environment ${PCL_LIBRARIES})
 
 add_executable (quizRansac src/quiz/ransac/ransac2d.cpp src/render/render.cpp src/processPointClouds.cpp)
