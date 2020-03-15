@@ -82,7 +82,7 @@ template<typename PointT>
 std::vector<double> ProcessPointClouds<PointT>::GetPlaneCoefficients(const typename pcl::PointCloud<PointT>::Ptr cloud, const std::unordered_set<int> &indexList, double &normalMagnitude) {
 	std::vector<double> coefficients(4);
 
-	// need at least 3 poip1 nts
+	// need at least 3 points
 	if (indexList.size() < 3) {
 		normalMagnitude = 0.0;
 		return coefficients;
@@ -124,47 +124,62 @@ std::unordered_set<int>  ProcessPointClouds<PointT>::GetGroundPlane(typename pcl
 	std::unordered_set<int> inliersResult;
 	std::srand(std::time(NULL));
 
-	// all available test points
-	std::deque<int> allTestPoints(cloud->points.size());
-	std::iota(allTestPoints.begin(), allTestPoints.end(), 0);
-
-	// TODO: Change to allow more test points to generate plane and use least squares solver for plane coefficients
+    // TODO: Generate plane optionally with more points
 	const int numPlanePoints = 3;
+    const int numCloudPoints = cloud->points.size();
+
+    if (numCloudPoints == 0)
+        return inliersResult;
 
 	for (int i = 0; i < maxIterations; ++i) {
-		// initialize remainingPoints to all available points
-		std::deque<int> remainingPoints = allTestPoints;
 		// new empty inliers
 		std::unordered_set<int> inliersTest;
 
-		// get points to generate plane
-		while (inliersTest.size() < numPlanePoints && !remainingPoints.empty()) {
-			const int pointIndex = std::rand() % remainingPoints.size();
-			// move to set of inliers
-			inliersTest.insert(remainingPoints[pointIndex]);
-			remainingPoints.erase(remainingPoints.begin() + pointIndex);
-		}
-
-		// get plane coefficients
+        // get plane coefficients
+        std::vector<double> coefficients;
 		double normalMagnitude = 0.0;
-		const std::vector<double> coefficients = GetPlaneCoefficients(cloud, inliersTest, normalMagnitude);
-		// if points are colinear, move on
-		if (normalMagnitude < FLT_EPSILON) continue;
+        while (normalMagnitude < FLT_EPSILON) {
+            // get points to generate plane
+            inliersTest.clear();
+            while (inliersTest.size() < numPlanePoints) {
+                const int index = std::rand() % numCloudPoints;
+                if (inliersTest.count(index)) continue;
+                // move to set of inliers
+                inliersTest.insert(index);
+            }
+            // get plane coefficients
+            coefficients = GetPlaneCoefficients(cloud, inliersTest, normalMagnitude);
+        }
 
 		// test for inliers
-		for (int k = 0; k < remainingPoints.size(); ++k) {
-			const int pointIndex = remainingPoints[k];
+		for (int k = 0; k < numCloudPoints; ++k) {
+
+            // don't test if already inlier
+            if (inliersTest.count(k))
+                continue;
+
 			// test distance
-			const double distance = std::fabs(coefficients[0] * cloud->points[pointIndex].x +
-			                                  coefficients[1] * cloud->points[pointIndex].y +
-											  coefficients[2] * cloud->points[pointIndex].z +
+			const double distance = std::fabs(coefficients[0] * cloud->points[k].x +
+			                                  coefficients[1] * cloud->points[k].y +
+											  coefficients[2] * cloud->points[k].z +
 											  coefficients[3]) / normalMagnitude;
 			if (distance < distanceTol) {
 				// add to set of inliers
-				inliersTest.insert(pointIndex);
+				inliersTest.insert(k);
 			}
 		}
-		// test if best fit
+
+        // TODO: Generate plane again using all inliers
+        // SVD cdecomposition to solve homogeneous equations
+        // A = [[x0, y0, z0, 1],
+        //      [x1, y1, z1, 1],
+        //      ...
+        //      [xn, yn, zn, 1]];
+        // [u, d, vt] = svd(A);
+        // coefficients = (last row of vt)
+        // coefficients /= coefficients[3];
+
+		// test if most inliers
 		if (inliersTest.size() > inliersResult.size()) {
 			inliersResult = inliersTest;
 		}
@@ -248,7 +263,7 @@ void ProcessPointClouds<PointT>::Proximity(const float distanceTol, const typena
 	processedPoints.insert(targetId);
 	cluster.push_back(targetId);
 	std::vector<int> nearbyPoints = tree.search(cloud->points[targetId], distanceTol);
-	for (const auto &id : nearbyPoints) {
+	for (const auto id : nearbyPoints) {
 		if (!processedPoints.count(id))
 			Proximity(distanceTol, cloud, id, tree, processedPoints, cluster);
 	}
@@ -258,7 +273,6 @@ template<typename PointT>
 std::vector<std::vector<int>> ProcessPointClouds<PointT>::euclideanCluster(const typename pcl::PointCloud<PointT>::Ptr cloud, KdTree<PointT> &tree, float distanceTol, int minSize, int maxSize)
 {
 
-	// TODO: Fill out this function to return list of indices for each cluster
 	std::unordered_set<int> processedPoints;
 	std::vector<std::vector<int>> clusters;
 	for (int id = 0; id < cloud->points.size(); ++id) {
@@ -281,16 +295,19 @@ std::vector<typename pcl::PointCloud<PointT>::Ptr> ProcessPointClouds<PointT>::C
     // Time clustering process
     auto startTime = std::chrono::steady_clock::now();
 
+    // build tree
 	KdTree<PointT> tree;
     for (int i=0; i < cloud->points.size(); i++)
     	tree.insert(cloud->points[i], i);
 
+    // find clusters
     std::vector<std::vector<int>> cluster_indices = euclideanCluster(cloud, tree, clusterTolerance, minSize, maxSize);
 
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
     std::cout << "clustering took " << elapsedTime.count() << " milliseconds and found " << cluster_indices.size() << " clusters" << std::endl;
 
+    // add clusters to cloud
     int j = 0;
     for (std::vector<std::vector<int>>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
     {

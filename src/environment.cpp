@@ -81,9 +81,9 @@ void cityBlock(pcl::visualization::PCLVisualizer::Ptr& viewer, ProcessPointCloud
     // -----Open 3D viewer and display City Block     -----
     // ----------------------------------------------------
     const float voxelResolution = 0.2;
-    const Eigen::Vector4f boundMin(-10.0, -6.0, -2.0, 1);
+    const Eigen::Vector4f boundMin(-10.0, -5.0, -2.0, 1);
     const Eigen::Vector4f boundMax(20.0, 6.0, 0.0, 1);
-    const int planeSegmentationIterations = 350;
+    const int planeSegmentationIterations = 500;
     const float planeSegmentationThreshold = 0.25;
     const float clusteringTolerance = 0.22;
     const int clusteringMinCount = 50;
@@ -97,17 +97,17 @@ void cityBlock(pcl::visualization::PCLVisualizer::Ptr& viewer, ProcessPointCloud
     // renderPointCloud(viewer,inputCloud,"inputCloud");
     // renderPointCloud(viewer,filterCloud,"filterCloud");
     // renderPointCloud(viewer,segmentCloud.first,"obstaclesCloud");
-    renderPointCloud(viewer,segmentCloud.second,"groundPlane", Color(1,1,1));
+    renderPointCloud(viewer,segmentCloud.second,"groundPlane", Color(0,1,0));
 
     int clusterId = 0;
-    std::vector<Color> colors = {Color(1,0,0), Color(0,1,0), Color(0,0,1), Color(0.5,0.5,0), Color(0,0.5,0.5), Color(0.5,0.0,0.5)};
+    std::vector<Color> colors = {Color(0,0,1), Color(0.5,0.5,0), Color(0,0.5,0.5), Color(0.5,0.0,0.5)};
     for(pcl::PointCloud<pcl::PointXYZI>::Ptr cluster : cloudClusters)
     {
         std::cout << "cluster size ";
         pointProcessorI.numPoints(cluster);
         renderPointCloud(viewer,cluster,"obstCloud"+std::to_string(clusterId),colors[clusterId % colors.size()]);
         Box box = pointProcessorI.BoundingBox(cluster);
-        renderBox(viewer,box,clusterId, colors[clusterId % colors.size()]);
+        renderBox(viewer,box,clusterId, Color(1,0,0));
         ++clusterId;
     }
 
@@ -150,9 +150,6 @@ int main (int argc, char** argv)
     std::vector<boost::filesystem::path> stream = pointProcessorI.streamPcd(std::string(SFND_SENSOR_DATA_ROOT) + "/pcd/data_1");
     auto streamIterator = stream.begin();
     pcl::PointCloud<pcl::PointXYZI>::Ptr inputCloudI;
-
-    // pcl::PointCloud<pcl::PointXYZI>::Ptr inputCloud = pointProcessorI.loadPcd(std::string(SFND_SENSOR_DATA_ROOT) + "/pcd/data_1/0000000000.pcd");
-    cityBlock(viewer, pointProcessorI, inputCloudI);
 
     while (!viewer->wasStopped ())
     {
